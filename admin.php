@@ -27,7 +27,7 @@ $users= $stmt->fetchAll(PDO::FETCH_ASSOC);
 <html>
 <head>
     <title>Admin page</title>
-    <link rel="stylesheet" href="forms-styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>

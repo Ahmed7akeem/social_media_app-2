@@ -63,7 +63,7 @@ $user_comments =$stmt_comments->fetchAll(PDO::FETCH_ASSOC);
 <html>
 <head>
     <title>Edit User</title>
-    <link rel="stylesheet" href="forms-styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="animation1">
