@@ -1,0 +1,174 @@
+/*--------------------------------------styl the form-----------------------------*/
+
+.banner1 {
+  color: white;
+  text-align: center;
+  margin-bottom: 0px;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.banner2 {
+  color: white;
+  text-align: center;
+  margin-bottom: 50px;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+  font-size: 1.5rem;
+}
+
+table {
+  width: 350px;
+  height: 450px;
+  background: linear-gradient(145deg, #500073, #6a0099);
+  margin: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin-top: 60px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+a,
+p {
+  color: rgba(255, 255, 255, 0.542);
+  text-align: center;
+}
+body h1,
+body h2,
+body h3,
+body h4,
+body h5,
+body h6 {
+  color: white !important;
+}
+
+/*---------------------------------------styl inputs&button -----------------------------*/
+
+.inputs input {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  height: 40px;
+  width: 80%;
+  margin-bottom: 15px;
+  margin-left: 5%;
+  border-radius: 10px;
+  padding: 0 15px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.inputs input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.inputs input:focus {
+  border-color: #8a00cc;
+  outline: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 10px rgba(140, 0, 205, 0.5);
+}
+
+.rad-button {
+  margin-left: 10%;
+}
+
+label {
+  color: white;
+  font-size: 14px;
+}
+
+button {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 25px;
+  font-size: 16px;
+  background-color: #6a0099;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #8a00cc;
+  transform: scale(1.05);
+}
+
+.link {
+  margin: 0 auto 20px auto;
+  color: rgba(255, 255, 255, 0.8);
+  display: block;
+  width: fit-content;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+/*-----------------------------------------animation for bg -----------------------------*/
+body {
+  background-color: #2a004e;
+}
+.animation1 {
+  height: 100vh;
+}
+.animation1::before {
+  content: "";
+  position: fixed;
+  width: 300%;
+  height: 100%;
+  background-color: #500073;
+  left: 20%;
+  bottom: 63%;
+  z-index: -1;
+  animation: waving 10s ease-in-out infinite alternate;
+  transform: translateX(-50%) skew(40deg, -49deg);
+  -webkit-transform: translateX(-50%) skew(40deg, -49deg);
+  -moz-transform: translateX(-50%) skew(40deg, -49deg);
+  -ms-transform: translateX(-50%) skew(40deg, -49deg);
+  -o-transform: translateX(-50%) skew(40deg, -49deg);
+  border-radius: 5990%;
+  -webkit-border-radius: 5990%;
+  -moz-border-radius: 5990%;
+  -ms-border-radius: 5990%;
+  -o-border-radius: 5990%;
+  -webkit-animation: waving 10s ease-in-out infinite alternate;
+}
+@-webkit-keyframes waving {
+  from {
+    transform: translateX(-50%) skew(40deg, -49deg);
+    -webkit-transform: translateX(-50%) skew(40deg, -49deg);
+    -moz-transform: translateX(-50%) skew(40deg, -49deg);
+    -ms-transform: translateX(-50%) skew(40deg, -49deg);
+    -o-transform: translateX(-50%) skew(40deg, -49deg);
+  }
+  to {
+    transform: translateX(-50%) skew(-45deg, 18deg);
+    -webkit-transform: translateX(-50%) skew(-45deg, 18deg);
+    -moz-transform: translateX(-50%) skew(-45deg, 18deg);
+    -ms-transform: translateX(-50%) skew(-45deg, 18deg);
+    -o-transform: translateX(-50%) skew(-45deg, 18deg);
+  }
+}
+@keyframes waving {
+  from {
+    transform: translateX(-50%) skew(40deg, -49deg);
+    -webkit-transform: translateX(-50%) skew(40deg, -49deg);
+    -moz-transform: translateX(-50%) skew(40deg, -49deg);
+    -ms-transform: translateX(-50%) skew(40deg, -49deg);
+    -o-transform: translateX(-50%) skew(40deg, -49deg);
+  }
+  to {
+    transform: translateX(-50%) skew(-45deg, 18deg);
+    -webkit-transform: translateX(-50%) skew(-45deg, 18deg);
+    -moz-transform: translateX(-50%) skew(-45deg, 18deg);
+    -ms-transform: translateX(-50%) skew(-45deg, 18deg);
+    -o-transform: translateX(-50%) skew(-45deg, 18deg);
+  }
+}
