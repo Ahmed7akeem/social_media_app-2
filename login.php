@@ -1,33 +1,39 @@
 <?php
 session_start();
-require 'db.php';
 
-if($_SERVER['REQUEST_METHOD']==='POST') {
-    $email=$_POST['email'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email =$_POST['email'];
     $password= $_POST['password'];
+    $siteB_url= "http://localhost/last2/Bsite.php";
+    $data = http_build_query([
+        'email' => $email,
+        'password' => $password
+    ]);
+
+
+
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded",
+            'method'  => 'POST',
+            'content' => $data
+        ]
+    ];
+
     
-
-    $stmt =$pdo->prepare("SELECT * FROM users WHERE email= ?");
-    $stmt->execute([$email]);
-    $user =$stmt->fetch(PDO::FETCH_ASSOC);
-
-
-if($user && password_verify($password, $user['password'])) {
-    $_SESSION['user_id']=$user['idusers'];
-    $_SESSION['user_role']=$user['role'];
+    $context = stream_context_create($options);
+    $result = file_get_contents($siteB_url, false, $context);
     
-        if($user['role'] === 'admin') {
-            header("Location: admin.php");
-        }else {
-            header("Location: index.php");
-        }
+    if ($result ==="valid") {
+        $_SESSION['user_id'] =$email;
+        header("Location: index.php");
         exit;
-}else{
-    $error="Invalid email or password.";
-}
-
+    } else {
+        $error = "Invalid email or  password.";
+    }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
