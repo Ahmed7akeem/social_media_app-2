@@ -1,35 +1,21 @@
 <?php
 session_start();
+require 'callBsiteAPI.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email =$_POST['email'];
-    $password= $_POST['password'];
-    $siteB_url= "http://localhost/last2/Bsite.php";
-    $data = http_build_query([
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $response = callBsiteAPI([
+        'action' => 'login',
         'email' => $email,
         'password' => $password
     ]);
-
-
-
-    $options = [
-        'http' => [
-            'header'  => "Content-type: application/x-www-form-urlencoded",
-            'method'  => 'POST',
-            'content' => $data
-        ]
-    ];
-
-    
-    $context = stream_context_create($options);
-    $result = file_get_contents($siteB_url, false, $context);
-    
-    if ($result ==="valid") {
-        $_SESSION['user_id'] =$email;
+    if ($response === 'valid') {
+        $_SESSION['user_id'] = $email;
         header("Location: index.php");
         exit;
     } else {
-        $error = "Invalid email or  password.";
+        $error = "Invalid email or password.";
     }
 }
 ?>

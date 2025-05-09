@@ -1,62 +1,77 @@
 <?php
 session_start();
-require 'db.php';
+require 'db.php'; 
+require 'callBsiteAPI.php';
 
-if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !=='admin') {
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
+$admin = json_decode(callBsiteAPI([
+    'action' => 'get_user',
+    'email' => $_SESSION['user_id']
+]), true);
 
-$edit_user_id =$_GET['idusers'] ?? null;
-if(!$edit_user_id) {
+if (!$admin || $admin['role'] !== 'admin') {
+    header("Location: index.php");
+    exit;
+}
+$edit_user_id = $_GET['idusers'] ?? null;
+if (!$edit_user_id || !is_numeric($edit_user_id)) {
     header("Location: admin.php");
     exit;
 }
-
-// ======================================get user data
-$stmt =$pdo->prepare("SELECT * FROM users WHERE idusers =?");
+$stmt = $pdo->prepare("SELECT * FROM users WHERE idusers = ?");
 $stmt->execute([$edit_user_id]);
-$user =$stmt->fetch(PDO::FETCH_ASSOC);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-//============================post delete
-if($_SERVER['REQUEST_METHOD'] ==='POST' && isset($_POST['delete_post'])) {
-    $post_id =$_POST['post_id'];
-    $stmt =$pdo->prepare("DELETE FROM posts WHERE id =?");
-    $stmt->execute([$post_id]);
-    header("Location: admin-edit-user.php?idusers=" . $edit_user_id);
+if (!$user) {
+    echo "Error: User not found.";
     exit;
 }
 
-// ================================comment delet
-if($_SERVER['REQUEST_METHOD'] ==='POST' && isset($_POST['delete_comment'])) {
-    $comment_id =$_POST['comment_id'];
-    $stmt =$pdo->prepare("DELETE FROM comments WHERE id =?");
-    $stmt->execute([$comment_id]);
-    header("Location: admin-edit-user.php? idusers =" . $edit_user_id);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update_user'])) {
+        callBsiteAPI([
+            'action' => 'update_user',
+            'email' => $user['email'],
+            'new_username' => $_POST['username'],
+            'new_email' => $_POST['email'],
+            'new_password' => ''
+        ]);
+        header("Location: admin.php");
+        exit;
+    }
+    if (isset($_POST['delete_post'])) {
+        callBsiteAPI([
+            'action' => 'delete_post',
+            'email' => $user['email'],
+            'post_id' => $_POST['post_id']
+        ]);
+        header("Location: admin-edit-user.php?idusers={$edit_user_id}");
+        exit;
+    }
+    if (isset($_POST['delete_comment'])) {
+        callBsiteAPI([
+            'action' => 'delete_comment',
+            'email' => $user['email'],
+            'comment_id' => $_POST['comment_id']
+        ]);
+        header("Location: admin-edit-user.php?idusers={$edit_user_id}");
+        exit;
+    }
 }
 
-//================================to make user update
-if($_SERVER['REQUEST_METHOD'] ==='POST' && isset($_POST['update_user'])) {
-    $username =$_POST['username'];
-    $email =$_POST['email'];
-    $role =$_POST['role'];
-    
-    $stmt =$pdo->prepare("UPDATE users SET username=?, email=?, role=? WHERE idusers=?");
-    $stmt->execute([$username, $email, $role, $edit_user_id]);
-    header("Location: admin.php");
-    exit;
-}
+$user_posts = json_decode(callBsiteAPI([
+    'action' => 'get_user_posts',
+    'idusers' => $edit_user_id
+]), true);
 
-// ======================================to get the  users posts
-$stmt_posts =$pdo->prepare("SELECT * FROM posts WHERE idusers=?");
-$stmt_posts->execute([$edit_user_id]);
-$user_posts =$stmt_posts->fetchAll(PDO::FETCH_ASSOC);
 
-// -=====================================to get th users comments
-$stmt_comments =$pdo->prepare("SELECT * FROM comments WHERE idusers =?");
-$stmt_comments->execute([$edit_user_id]);
-$user_comments =$stmt_comments->fetchAll(PDO::FETCH_ASSOC);
+$user_comments = json_decode(callBsiteAPI([
+    'action' => 'get_user_comments',
+    'idusers' => $edit_user_id
+]), true);
 ?>
 
 <!DOCTYPE html>

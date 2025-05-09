@@ -1,32 +1,56 @@
 <?php
-require 'db.php';
-if($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username =$_POST['username'];
-    $email =$_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-    $role =$_POST['role']; 
+require 'callBsiteAPI.php';
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $role = $_POST['role'] ?? 'user';
+    $profile_picture = '';
+
     
-    $profile_picture= '';
-    if(isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir='uploads/';
-        if(!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-        $filename=basename($_FILES['profile_picture']['name']);
-        $targetPath=$uploadDir . $filename;
-        if(move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetPath)) {
-            $profile_picture=$targetPath;
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+        $fileType = mime_content_type($fileTmpPath); 
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+        if (!in_array($fileType, $allowedTypes)) {
+            $error = "Only JPG, PNG, or GIF files are allowed.";
+        } elseif ($_FILES['profile_picture']['size'] > (2 * 1024 * 1024)) {
+            $error = "File must be less than 2MB.";
+        } else {
+            $uploadDir = 'uploads/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755);
+            $filename = uniqid() . '_' . basename($_FILES['profile_picture']['name']);
+            $targetPath = $uploadDir . $filename;
+
+            if (move_uploaded_file($fileTmpPath, $targetPath)) {
+                $profile_picture = $targetPath;
+            } else {
+                $error = "Upload failed.";
+            }
         }
+    } else {
+        $error = "Profile picture is required.";
     }
-   
-    $stmt=$pdo->prepare("SELECT * FROM users WHERE username=? OR email=?");
-    $stmt->execute([$username, $email]);
-    
-    if($stmt->fetch()) {
-        $error="username or email already exists.";
-    }else{
-        $stmt=$pdo->prepare("INSERT INTO users (username, email, password, profile_picture, role) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$username, $email, $password, $profile_picture, $role]);
-        header("Location: login.php");
-        exit;
+    if (empty($error)) {
+        $response = callBsiteAPI([
+            'action' => 'register_user',
+            'username' => $username,
+            'email' => $email,
+            'password' => $password,
+            'role' => $role,
+            'profile_picture' => $profile_picture
+        ]);
+        if ($response === 'success') {
+            header("Location: login.php");
+            exit;
+        } elseif ($response === 'exists') {
+            $error = "Username or email already exists.";
+        } else {
+            $error = "Registration failed.";
+        }
     }
 }
 ?>

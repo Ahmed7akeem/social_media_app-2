@@ -1,16 +1,24 @@
 <?php
 session_start();
-require 'db.php';
+require 'callBsiteAPI.php';
 
-if(!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-$user_id=$_SESSION['user_id'];
-$stmt=$pdo->prepare("SELECT * FROM users WHERE idusers=?");
-$stmt->execute([$user_id]);
-$user=$stmt->fetch(PDO::FETCH_ASSOC);
+
+$response = callBsiteAPI([
+    'action' => 'get_user',
+    'email' => $_SESSION['user_id']
+]);
+if ($response === 'invalid') {
+    session_destroy();
+    header("Location: login.php");
+    exit;
+}
+$user = json_decode($response, true);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

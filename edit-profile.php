@@ -1,134 +1,89 @@
 <?php
 session_start();
-require 'db.php';
+require 'callBsiteAPI.php';
 
-if(!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT * FROM users WHERE idusers = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$email = $_SESSION['user_id'];
 $errors = [];
+$uploadedPicPath = '';
 
-if($_SERVER['REQUEST_METHOD'] === 'POST') {
+$response = callBsiteAPI([
+    'action' => 'get_user',
+    'email' => $email
+]);
+$user = json_decode($response, true);
+if (!$user) {
+    session_destroy();
+    header("Location: login.php");
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current_password = trim($_POST['current_password'] ?? '');
     $current_username = trim($_POST['current_username'] ?? '');
     $current_email = trim($_POST['current_email'] ?? '');
-
     $new_username = trim($_POST['new_username'] ?? '');
     $new_email = trim($_POST['new_email'] ?? '');
     $new_password = trim($_POST['new_password'] ?? '');
-    $pic = $user['profile_picture'];
+    $uploadedPicPath = $user['profile_picture'];
 
-    $current_errors = [];
-    
-    if(empty($current_password)) {
-        $current_errors[] = "Current password is required.";
-    }elseif(!password_verify($current_password, $user['password'])) {
-        $current_errors[] = "Current password is incorrect.";
-    }
-    
-    if(empty($current_username)) {
-        $current_errors[] = "Current username is required.";
-    }elseif($current_username !== $user['username']) {
-        $current_errors[] = "Current username doesn't match.";
-    }
-    
-    if(empty($current_email)) {
-        $current_errors[] = "Current email is required.";
-    }elseif($current_email !== $user['email']) {
-        $current_errors[] = "Current email doesn't match.";
-    }
-    
-    if(!empty($current_errors)) {
-        $errors = array_merge($errors, $current_errors);
-    }
+    if (empty($current_password) || !password_verify($current_password, $user['password']))
+        $errors[] = "Current password is incorrect.";
+    if (empty($current_username) || $current_username !== $user['username'])
+        $errors[] = "Current username doesn't match.";
+    if (empty($current_email) || $current_email !== $user['email'])
+        $errors[] = "Current email doesn't match.";
+    if (empty($new_username) || !preg_match('/^[a-zA-Z0-9_]{3,20}$/', $new_username))
+        $errors[] = "New username must be 3-20 chars using letters/numbers/_";
+    if (empty($new_email) || !filter_var($new_email, FILTER_VALIDATE_EMAIL))
+        $errors[] = "Invalid new email format.";
 
-    //========================ifcurrent info0 is valid
-    if(empty($errors)) {
-        if(empty($new_username)) {
-            $errors[] = "New username is required.";
-        }elseif(!preg_match('/^[a-zA-Z0-9_]{3,20}$/', $new_username)) {
-            $errors[] = "Username must be 3-20 characters (letters, numbers, underscores).";
-        } else{
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND idusers != ?");
-            $stmt->execute([$new_username, $user_id]);
-            if($stmt->fetch()) {
-                $errors[] = "Username already taken.";
+
+        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $allowed = ['image/jpeg', 'image/png', 'image/gif'];
+        $fileType = $_FILES['profile_picture']['type'];
+
+        if (!in_array($fileType, array_keys($allowed))) {
+            $errors[] = "File must be jpg, png, or gif.";
+        } elseif ($_FILES['profile_picture']['size'] > 2 * 1024 * 1024) {
+            $errors[] = "File must be under 2MB.";
+        } else {
+            $uploadDir = 'uploads/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir);
+
+            $filename = uniqid() . '_' . basename($_FILES['profile_picture']['name']);
+            $target = $uploadDir . $filename;
+
+            if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target)) {
+                if ($user['profile_picture'] && file_exists($user['profile_picture'])) {
+                    unlink($user['profile_picture']);
+                }
+                $uploadedPicPath = $target;
+            } else {
+                $errors[] = "Failed to upload image.";
             }
         }
+    }
+    if (empty($errors)) {
+        $update = callBsiteAPI([
+            'action' => 'update_profile',
+            'email' => $email,
+            'new_username' => $new_username,
+            'new_email' => $new_email,
+            'new_password' => $new_password,
+            'profile_picture' => $uploadedPicPath
+        ]);
 
         
-        if(empty($new_email)) {
-            $errors[] = "New email is required.";
-        }elseif(!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = "Invalid email format.";
-        } else{
-            $email_parts = explode('@', $new_email);
-            $domain = array_pop($email_parts);
-            if(!checkdnsrr($domain, 'MX')) {
-                $errors[] = "Email domain is invalid.";
-            } else{
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND idusers != ?");
-                $stmt->execute([$new_email, $user_id]);
-                if($stmt->fetch()) {
-                    $errors[] = "Email already in use.";
-                }
-            }
-        }
-
-        
-        $password = $user['password'];
-        if(!empty($new_password)) {
-            if(strlen($new_password) < 1) {
-                $errors[] = "Password must be at least 1 characters.";
-             
-            } 
-            else{
-                $password = password_hash($new_password, PASSWORD_DEFAULT);
-            }
-        }
-
-        if(isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-            $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif'];
-            $fileType = $_FILES['profile_picture']['type'];
-            
-            if(!array_key_exists($fileType, $allowedTypes)) {
-                $errors[] = "Only JPG, PNG, and GIF files are allowed.";
-            }elseif($_FILES['profile_picture']['size'] > 2 * 1024 * 1024) {
-                $errors[] = "File size must be less than 2MB.";
-            } else{
-                $uploadDir = 'uploads/';
-                $filename = uniqid() . '_' . basename($_FILES['profile_picture']['name']);
-                $targetPath = $uploadDir . $filename;
-                
-                if(move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetPath)) {
-            // ==============to delete old picture 
-            if($user['profile_picture'] && file_exists($user['profile_picture'])) {
-                        unlink($user['profile_picture']);
-                    }
-                    $pic = $targetPath;
-                } else{
-                    $errors[] = "Error uploading profile picture.";
-                }
-            }
-        }
-
-        if(empty($errors)) {
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, password = ?, profile_picture = ? WHERE idusers = ?");
-            if($stmt->execute([$new_username, $new_email, $password, $pic, $user_id])) {
-                if($new_username !== $user['username']) {
-                    $_SESSION['username'] = $new_username;
-                }
-                header("Location: profile.php");
-                exit;
-            } else{
-                $errors[] = "Failed to update profile.";
-            }
+        if ($update === 'success') {
+            $_SESSION['user_id'] = $new_email;
+            header("Location: profile.php");
+            exit;
+        } else {
+            $errors[] = "Failed to update profile in server.";
         }
     }
 }
